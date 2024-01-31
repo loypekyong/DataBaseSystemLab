@@ -23,12 +23,47 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+    // Arraylist to store all tables
+    private ArrayList<TableItems> tables;
+
+
+    /**
+     * A help class to facilitate organizing the information of each table
+     * */
+    
+    public static class TableItems{
+        
+        public DbFile file;
+        public String name;
+        public String pkeyField;
+        
+        public TableItems(DbFile file, String name, String pkeyField){
+            this.file = file;
+            this.name = name;
+            this.pkeyField = pkeyField;
+        }
+        
+    }
+
+    /**
+     * @return
+     *        An iterator which iterates over all the TableItems
+     *        that are incuded in the Catalog
+     * */
+    public Iterator<TableItems> iterator() {
+        // some code goes here
+        // use arraylist iterator
+        return tables.iterator(); //Testing
+        
+    }
+
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
         // some code goes here
+        tables = new ArrayList<TableItems>();
     }
 
     /**
@@ -42,6 +77,18 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+
+        // Check if table already exists
+        for (TableItems table : tables) {
+            if (table.name.equals(name) || table.file.getId() == file.getId()){
+                tables.remove(table);
+                break;
+            }
+        }
+
+        tables.add(new TableItems(file, name, pkeyField));
+
+
     }
 
     public void addTable(DbFile file, String name) {
@@ -65,7 +112,16 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        // if (name == null) { //doesnt work
+        //     throw new NoSuchElementException();
+        // }
+        for (TableItems table : tables) {
+            if (table.name.equals(name)) {
+                return table.file.getId();
+            }
+        }
+
+        throw new NoSuchElementException();
     }
 
     /**
@@ -76,7 +132,17 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+
+        // if (tableid == null) {
+        //     throw new NoSuchElementException();
+        // }
+        for (TableItems table : tables) {
+            if (table.file.getId() == tableid) {
+                return table.file.getTupleDesc();
+            }
+        }
+
+        throw new NoSuchElementException();
     }
 
     /**
@@ -87,27 +153,65 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+
+        // if (tableid == null) {
+        //     throw new NoSuchElementException();
+        // }
+
+        for (TableItems table : tables) {
+            if (table.file.getId() == tableid) {
+                return table.file;
+            }
+        }
+        throw new NoSuchElementException();
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+
+        // if (tableid == null) {
+        //     throw new NoSuchElementException();
+        // }
+
+        for (TableItems table : tables) {
+            if (table.file.getId() == tableid) {
+                return table.pkeyField;
+            }
+        }
+        
+        throw new NoSuchElementException();
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+        for (TableItems table : tables) {
+            ids.add(table.file.getId());
+        }
+        return ids.iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+
+        // if (id == null) {
+        //     throw new NoSuchElementException();
+        // }
+
+        for (TableItems table : tables) {
+            if (table.file.getId() == id) {
+                return table.name;
+            }
+        }
+        
+        throw new NoSuchElementException();
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        tables = new ArrayList<TableItems>();
     }
     
     /**
