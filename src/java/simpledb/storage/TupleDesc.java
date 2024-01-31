@@ -49,6 +49,7 @@ public class TupleDesc implements Serializable {
      * */
     public Iterator<TDItem> iterator() {
         // some code goes here
+        // use arraylist iterator
         return items.iterator(); //Testing
         
     }
@@ -69,12 +70,15 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
 
+        // reject if typeAr is < 1
         if (typeAr.length < 1) { //Not sure this part required
             throw new IllegalArgumentException("Must contain at least one entry");
         }
 
+
         for (int i = 0; i < typeAr.length; i++) {
             if (i > fieldAr.length) {
+                // add null if fieldAr is too short
                 items.add(new TDItem(typeAr[i], null));
             }
             else {
@@ -94,11 +98,12 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr) {
         // some code goes here
         
+        // reject if typeAr is < 1
         if (typeAr.length < 1) { //Not sure this part required
             throw new IllegalArgumentException("Must contain at least one entry");
         }
 
-
+        // add names as null
         for (int i = 0; i < typeAr.length; i++) {
             items.add(new TDItem(typeAr[i], null));
         }
@@ -124,6 +129,7 @@ public class TupleDesc implements Serializable {
      */
     public String getFieldName(int i) throws NoSuchElementException {
         // some code goes here
+        // bad index
         if (i < 0 || i >= items.size()) {
             throw new NoSuchElementException();
         }
@@ -142,6 +148,7 @@ public class TupleDesc implements Serializable {
      */
     public Type getFieldType(int i) throws NoSuchElementException {
         // some code goes here
+        // bad index
         if (i < 0 || i >= items.size()) {
             throw new NoSuchElementException();
         }
@@ -179,6 +186,7 @@ public class TupleDesc implements Serializable {
      */
     public int getSize() {
         // some code goes here
+        // what the size in bytes??
         return items.size() * 4; //Testing
     }
 
@@ -195,14 +203,18 @@ public class TupleDesc implements Serializable {
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
 
+        // merged typeAr
         Type[] merge_typeAr = new Type[td1.numFields() + td2.numFields()];
+        // merged fieldAr
         String[] merge_fieldAr = new String[td1.numFields() + td2.numFields()];
 
+        // add td1 items
         for (int i = 0; i < td1.numFields(); i++) {
             merge_typeAr[i] = td1.getFieldType(i);
             merge_fieldAr[i] = td1.getFieldName(i);
         }
 
+        // add td2 items
         for (int i = 0; i < td2.numFields(); i++) {
             merge_typeAr[i + td1.numFields()] = td2.getFieldType(i);
             merge_fieldAr[i + td1.numFields()] = td2.getFieldName(i);
@@ -224,22 +236,27 @@ public class TupleDesc implements Serializable {
 
     public boolean equals(Object o) {
         // some code goes here
-        // if (o == null) { //Object is null should return false
-        //     return false;
-        // }
+        if (o == null) { //Object is null should return false
+            return false;
+        }
 
-        // // TupleDesc other = (TupleDesc) o; // test say cannot upcast
+        if (o.getClass() != this.getClass()) { //Object is not a TupleDesc should return false
+            return false;
+        }
 
-        // if (items.size() != o.numFields()) {
-        //     return false;
-        // }
+        TupleDesc object = (TupleDesc) o;
 
-        // for (int i = 0; i < items.size(); i++) {
-        //     // TODO Not sure names need to be equal
-        //     if ((items.get(i).fieldType != o.getFieldType(i))){
-        //         return false;
-        //     }
-        // }
+
+        if (items.size() != object.numFields()) { // not the same size should return false
+            return false;
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            // if the type is not the same should return false
+            if ((items.get(i).fieldType != object.getFieldType(i))){
+                return false;
+            }
+        }
 
         return true;
 
