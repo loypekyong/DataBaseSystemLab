@@ -187,7 +187,7 @@ public class TupleDesc implements Serializable {
     public int getSize() {
         // some code goes here
         // what the size in bytes??
-        return items.size() * 4; //Testing
+        return items.size() / 8; //Testing
     }
 
     /**
