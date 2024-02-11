@@ -41,6 +41,8 @@ public class Tuple implements Serializable {
         this.td = td;
         this.recordId = null;
         items = new Field[td.numFields()];
+        // set all items to null
+        Arrays.fill(items, null);
     }
 
     /**
@@ -83,6 +85,9 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
+        if (i < 0 || i >= items.length) {
+            throw new IllegalArgumentException("Invalid index");
+        }
         items[i] = f;
 
     }
@@ -94,6 +99,9 @@ public class Tuple implements Serializable {
      */
     public Field getField(int i) {
         // some code goes here
+        if (i < 0 || i >= items.length) {
+            throw new IllegalArgumentException("Invalid index");
+        }
         return items[i];
     }
 
