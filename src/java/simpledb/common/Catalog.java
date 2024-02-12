@@ -77,6 +77,9 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        if (name == null) {
+            throw new IllegalArgumentException("Name cannot be null");
+        }
 
         // Check if table already exists
         for (TableItems table : tables) {
