@@ -58,15 +58,22 @@ public class HeapPageId implements PageId {
      */
     public boolean equals(Object o) {
         // some code goes here
-        if (o == null) {
-            return false;
+        // if (o == null) {
+        //     return false;
+        // }
+        // if (o.getClass() != this.getClass()) {
+        //     return false;
+        // }
+        // HeapPageId object = (HeapPageId) o;
+        // return (object.getTableId() == this.getTableId() && object.getPageNumber() == this.getPageNumber());
+        if (o instanceof HeapPageId) {
+            HeapPageId other = (HeapPageId) o;
+            return other.tableId == tableId && other.pgNo == pgNo;
         }
-        if (o.getClass() != this.getClass()) {
-            return false;
-        }
-        HeapPageId object = (HeapPageId) o;
-        return (object.getTableId() == this.getTableId() && object.getPageNumber() == this.getPageNumber());
+        return false;
+    
     }
+
 
     /**
      *  Return a representation of this object as an array of

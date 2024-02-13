@@ -99,8 +99,7 @@ public class BufferPool {
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
         
-        // acquire lock
-        
+        return null;
 
 
 

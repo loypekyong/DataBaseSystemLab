@@ -644,17 +644,11 @@ java.lang.Object
 java.util.NoSuchElementException
 simpledb.index.BTreeLeafPageReverseIterator
 ||:simpledb.storage.BufferPool
-simpledb.storage.PageId
 simpledb.common.DbException
-simpledb.storage.DbFile
-simpledb.common.Catalog
-java.util.concurrent.ConcurrentHashMap
-simpledb.common.Database
 simpledb.storage.BufferPool$PageItems
 java.lang.Object
 java.io.IOException
 simpledb.transaction.TransactionAbortedException
-simpledb.storage.Page
 simpledb.storage.BufferPool
 ||:simpledb.storage.Tuple$1
 simpledb.storage.Tuple$1
@@ -837,7 +831,6 @@ simpledb.execution.Predicate$Op
 java.io.Serializable
 simpledb.execution.Predicate
 ||:simpledb.storage.HeapPageId
-java.lang.UnsupportedOperationException
 simpledb.storage.PageId
 simpledb.storage.HeapPageId
 java.lang.Object

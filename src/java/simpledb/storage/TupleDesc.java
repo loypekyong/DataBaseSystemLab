@@ -241,29 +241,20 @@ public class TupleDesc implements Serializable {
 
     public boolean equals(Object o) {
         // some code goes here
-        if (o == null) { //Object is null should return false
-            return false;
-        }
-
-        if (o.getClass() != this.getClass()) { //Object is not a TupleDesc should return false
-            return false;
-        }
-
-        TupleDesc object = (TupleDesc) o;
-
-
-        if (items.size() != object.numFields()) { // not the same size should return false
-            return false;
-        }
-
-        for (int i = 0; i < items.size(); i++) {
-            // if the type is not the same should return false
-            if ((items.get(i).fieldType != object.getFieldType(i))){
+        if (o instanceof TupleDesc) {
+            TupleDesc other = (TupleDesc) o;
+            if (items.size() != other.numFields()) {
                 return false;
             }
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).fieldType != other.getFieldType(i)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
-        return true;
+        return false;
 
     }
 
