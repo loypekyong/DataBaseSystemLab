@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Catalog {
 
     // Arraylist to store all tables
-    private ArrayList<TableItems> tables;
+    // private ArrayList<TableItems> tables;
+    private ConcurrentHashMap<Integer, TableItems> tables;
 
 
     /**
@@ -52,8 +53,7 @@ public class Catalog {
      * */
     public Iterator<TableItems> iterator() {
         // some code goes here
-        // use arraylist iterator
-        return tables.iterator(); //Testing
+        return tables.values().iterator();
         
     }
 
@@ -63,7 +63,7 @@ public class Catalog {
      */
     public Catalog() {
         // some code goes here
-        tables = new ArrayList<TableItems>();
+        tables = new ConcurrentHashMap<Integer, TableItems>();
     }
 
     /**
@@ -82,15 +82,19 @@ public class Catalog {
         }
 
         // Check if table already exists
-        for (TableItems table : tables) {
-            if (table.name.equals(name) || table.file.getId() == file.getId()){
-                tables.remove(table);
-                break;
+        if (tables.containsKey(file.getId())) {
+            tables.remove(file.getId());
+        }
+
+        // check if name already exists
+        for (TableItems table : tables.values()) {
+            if (table.name.equals(name)) {
+                tables.remove(table.file.getId());
             }
         }
 
-        tables.add(new TableItems(file, name, pkeyField));
-
+        tables.put(file.getId(), new TableItems(file, name, pkeyField));
+        
 
     }
 
@@ -118,7 +122,7 @@ public class Catalog {
         // if (name == null) { //doesnt work
         //     throw new NoSuchElementException();
         // }
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             if (table.name.equals(name)) {
                 return table.file.getId();
             }
@@ -139,7 +143,7 @@ public class Catalog {
         // if (tableid == null) {
         //     throw new NoSuchElementException();
         // }
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             if (table.file.getId() == tableid) {
                 return table.file.getTupleDesc();
             }
@@ -161,11 +165,12 @@ public class Catalog {
         //     throw new NoSuchElementException();
         // }
 
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             if (table.file.getId() == tableid) {
                 return table.file;
             }
         }
+
         throw new NoSuchElementException();
     }
 
@@ -176,7 +181,7 @@ public class Catalog {
         //     throw new NoSuchElementException();
         // }
 
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             if (table.file.getId() == tableid) {
                 return table.pkeyField;
             }
@@ -189,7 +194,7 @@ public class Catalog {
         // some code goes here
         
         ArrayList<Integer> ids = new ArrayList<Integer>();
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             ids.add(table.file.getId());
         }
         return ids.iterator();
@@ -202,7 +207,7 @@ public class Catalog {
         //     throw new NoSuchElementException();
         // }
 
-        for (TableItems table : tables) {
+        for (TableItems table : tables.values()) {
             if (table.file.getId() == id) {
                 return table.name;
             }
@@ -214,7 +219,7 @@ public class Catalog {
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
-        tables = new ArrayList<TableItems>();
+        tables = new ConcurrentHashMap<Integer, TableItems>();
     }
     
     /**
