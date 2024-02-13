@@ -835,7 +835,7 @@ simpledb.storage.PageId
 simpledb.storage.HeapPageId
 java.lang.Object
 ||:simpledb.storage.RecordId
-java.lang.UnsupportedOperationException
+simpledb.storage.PageId
 simpledb.storage.RecordId
 java.lang.Object
 java.io.Serializable
