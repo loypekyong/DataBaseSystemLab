@@ -1805,7 +1805,6 @@ java.util.NoSuchElementException
 simpledb.execution.JoinPredicate
 simpledb.transaction.TransactionAbortedException
 ||:simpledb.storage.TupleDesc
-java.lang.UnsupportedOperationException
 java.lang.invoke.MethodHandles$Lookup
 java.util.Iterator
 simpledb.common.Type

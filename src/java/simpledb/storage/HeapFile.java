@@ -31,6 +31,8 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
+
+        
     }
 
     /**

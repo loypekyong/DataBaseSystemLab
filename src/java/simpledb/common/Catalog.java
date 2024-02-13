@@ -23,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
-    // Arraylist to store all tables
-    // private ArrayList<TableItems> tables;
     private ConcurrentHashMap<Integer, TableItems> tables;
 
 

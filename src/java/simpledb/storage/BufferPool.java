@@ -85,6 +85,8 @@ public class BufferPool {
      * be added to the buffer pool and returned.  If there is insufficient
      * space in the buffer pool, a page should be evicted and the new page
      * should be added in its place.
+     * 
+     * 
      *
      * @param tid the ID of the transaction requesting the page
      * @param pid the ID of the requested page
@@ -96,19 +98,9 @@ public class BufferPool {
         /**
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
-        if (pages.size() >= pageSize) {
-            throw new DbException("BufferPool is full");
-        }
-
-        if (pages.containsKey(pid)) {
-            return pages.get(pid);
-        }
-
-        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-        Page page = file.readPage(pid);
-        pages.put(pid, page);
-        return page;
-
+        
+        // acquire lock
+        
 
 
 
