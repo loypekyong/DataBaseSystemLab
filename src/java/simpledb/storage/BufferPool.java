@@ -33,6 +33,21 @@ public class BufferPool {
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
 
+    
+    private ConcurrentHashMap<PageId, Page> pages;
+
+
+    public static class PageItems{
+
+        public TransactionId tid;
+        public PageId pid;
+        
+        public PageItems(TransactionId tid, PageId pid){
+            this.tid = tid;
+            this.pid = pid;
+        }
+    }
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -40,6 +55,10 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        BufferPool.pageSize = numPages;
+        // pages = new ConcurrentHashMap<PageId, Page>(numPages);
+        
+
     }
     
     public static int getPageSize() {
@@ -71,10 +90,28 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
-        // some code goes here
-        return null;
+  
+        /**
+         * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
+         */
+        if (pages.size() >= pageSize) {
+            throw new DbException("BufferPool is full");
+        }
+
+        if (pages.containsKey(pid)) {
+            return pages.get(pid);
+        }
+
+        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page page = file.readPage(pid);
+        pages.put(pid, page);
+        return page;
+
+
+
+
     }
 
     /**

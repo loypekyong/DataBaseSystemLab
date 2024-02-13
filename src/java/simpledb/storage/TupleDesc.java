@@ -187,7 +187,7 @@ public class TupleDesc implements Serializable {
     public int getSize() {
         // some code goes here
         // what the size in bytes??
-        int size;
+        int size = 0;
         for (TDItem i: items){
             size += i.fieldType.getLen();
 
