@@ -118,7 +118,7 @@ public class Tuple implements Serializable {
         // throw new UnsupportedOperationException("Implement this");
         String result = "";
         for (Field item : items) {
-            result += items.toString() + "\t";
+            result += item.toString() + "\t";
         }
         result = result.substring(0, result.length() - 1);
         return result;
