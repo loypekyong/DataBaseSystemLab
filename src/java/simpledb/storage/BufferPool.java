@@ -34,7 +34,7 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     
-    private ConcurrentHashMap<PageId, Page> pages;
+    private ConcurrentHashMap<PageId, Page> pool;
 
 
     public static class PageItems{
@@ -56,7 +56,8 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         BufferPool.pageSize = numPages;
-        // pages = new ConcurrentHashMap<PageId, Page>(numPages);
+        pool = new ConcurrentHashMap<PageId, Page>();
+        
         
 
     }
@@ -98,11 +99,28 @@ public class BufferPool {
         /**
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
-        
-        return null;
 
+        // Todo: Some lock mechanism should be implemented here???
 
+        if (pool.size() < pageSize){
 
+            if (pool.containsKey(pid)){
+                return pool.get(pid);
+            } else {
+                DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+                Page page = file.readPage(pid);
+                pool.put(pid, page);
+                return page;
+            }
+        } else if (pool.size() == pageSize){
+            if (pool.containsKey(pid)){
+                return pool.get(pid);
+            } else {
+                throw new DbException("BufferPool is full");
+            }
+        } else {
+            throw new DbException("BufferPool is full");
+        }
     }
 
     /**

@@ -307,9 +307,24 @@ public class HeapPage implements Page {
         // some code goes here
         // check if the slot is used
         int headerIndex = i / 8;
-        int bitIndex = i % 8;
-        return (header[headerIndex] & (1 << bitIndex)) != 0;
+        int offset = i % 8;
 
+        byte headerByte = header[headerIndex];
+        byte mask = (byte) (1 << offset);
+
+        //print all
+        System.out.println("i: " + i);
+        System.out.println("number of slots: " + numSlots);
+        System.out.println("header: " + Arrays.toString(header));
+        System.out.println("headerIndex: " + headerIndex);
+        System.out.println("offset: " + offset);
+        System.out.println("headerByte: " + headerByte);
+        System.out.println("mask: " + mask);
+        System.out.println("headerByte & mask: " + (headerByte & mask));
+
+
+        return (headerByte & mask) != 0;
+       
     }
 
     /**
