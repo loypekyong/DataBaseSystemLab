@@ -237,7 +237,7 @@ public class BufferPool {
     }
 
     /**
-     * Discards a page from the buffer pool.
+     * Discards a page from the buffer pool.s
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
     private synchronized  void evictPage() throws DbException {

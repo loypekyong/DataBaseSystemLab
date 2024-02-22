@@ -309,21 +309,7 @@ public class HeapPage implements Page {
         int headerIndex = i / 8;
         int offset = i % 8;
 
-        byte headerByte = header[headerIndex];
-        byte mask = (byte) (1 << offset);
-
-        //print all
-        // System.out.println("i: " + i);
-        // System.out.println("number of slots: " + numSlots);
-        // System.out.println("header: " + Arrays.toString(header));
-        // System.out.println("headerIndex: " + headerIndex);
-        // System.out.println("offset: " + offset);
-        // System.out.println("headerByte: " + headerByte);
-        // System.out.println("mask: " + mask);
-        // System.out.println("headerByte & mask: " + (headerByte & mask));
-
-
-        return (headerByte & mask) != 0;
+        return (header[headerIndex] & (1 << offset)) != 0;
        
     }
 
@@ -342,10 +328,15 @@ public class HeapPage implements Page {
     public Iterator<Tuple> iterator() {
         // some code goes here
         // return an iterator over all tuples on this page
+        
+        // check for empty slots and return an iterator over all tuples on this page
+
         return new Iterator<Tuple>() {
             private int index = 0;
+
             @Override
             public boolean hasNext() {
+                // check if the next tuple is empty and skip it
                 while (index < numSlots && !isSlotUsed(index)) {
                     index++;
                 }
@@ -353,13 +344,23 @@ public class HeapPage implements Page {
             }
 
             @Override
+
             public Tuple next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
                 return tuples[index++];
             }
+
+        
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove not supported");
+            }
+
+            
         };
+        
     }
 
 }
