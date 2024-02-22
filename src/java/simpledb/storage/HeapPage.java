@@ -313,14 +313,14 @@ public class HeapPage implements Page {
         byte mask = (byte) (1 << offset);
 
         //print all
-        System.out.println("i: " + i);
-        System.out.println("number of slots: " + numSlots);
-        System.out.println("header: " + Arrays.toString(header));
-        System.out.println("headerIndex: " + headerIndex);
-        System.out.println("offset: " + offset);
-        System.out.println("headerByte: " + headerByte);
-        System.out.println("mask: " + mask);
-        System.out.println("headerByte & mask: " + (headerByte & mask));
+        // System.out.println("i: " + i);
+        // System.out.println("number of slots: " + numSlots);
+        // System.out.println("header: " + Arrays.toString(header));
+        // System.out.println("headerIndex: " + headerIndex);
+        // System.out.println("offset: " + offset);
+        // System.out.println("headerByte: " + headerByte);
+        // System.out.println("mask: " + mask);
+        // System.out.println("headerByte & mask: " + (headerByte & mask));
 
 
         return (headerByte & mask) != 0;

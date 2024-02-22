@@ -27,6 +27,8 @@ public class BufferPool {
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
+
+    public static int numPages;
     
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
@@ -36,18 +38,6 @@ public class BufferPool {
     
     private ConcurrentHashMap<PageId, Page> pool;
 
-
-    public static class PageItems{
-
-        public TransactionId tid;
-        public PageId pid;
-        
-        public PageItems(TransactionId tid, PageId pid){
-            this.tid = tid;
-            this.pid = pid;
-        }
-    }
-
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -55,7 +45,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
-        BufferPool.pageSize = numPages;
+        BufferPool.numPages = numPages;
         pool = new ConcurrentHashMap<PageId, Page>();
         
         
@@ -102,7 +92,7 @@ public class BufferPool {
 
         // Todo: Some lock mechanism should be implemented here???
 
-        if (pool.size() < pageSize){
+        if (pool.size() < numPages){
 
             if (pool.containsKey(pid)){
                 return pool.get(pid);
@@ -112,7 +102,7 @@ public class BufferPool {
                 pool.put(pid, page);
                 return page;
             }
-        } else if (pool.size() == pageSize){
+        } else if (pool.size() == numPages){
             if (pool.containsKey(pid)){
                 return pool.get(pid);
             } else {
