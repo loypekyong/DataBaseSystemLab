@@ -129,17 +129,57 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
     }
 
-    // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
-        // some code goes here
-        /**
-     * Returns an iterator over all the tuples stored in this DbFile. The
-     * iterator must use {@link BufferPool#getPage}, rather than
-     * {@link #readPage} to iterate through the pages.
-     *
-     * @return an iterator over all the tuples stored in this DbFile.
-     */
-        return null;
+        return new DbFileIterator() {
+            private int currentPage = -1;
+            private Iterator<Tuple> currentIterator = null;
+    
+            @Override
+            public void open() throws DbException, TransactionAbortedException {
+                currentPage = 0;
+                currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
+            }
+    
+            @Override
+            public boolean hasNext() throws DbException, TransactionAbortedException {
+                if (currentIterator == null) {
+                    return false;
+                }
+    
+                if (currentIterator.hasNext()) {
+                    return true;
+                }
+    
+                if (currentPage < BufferPool.numPages - 1) {
+                    currentPage++;
+                    currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
+                    return hasNext();
+                }
+    
+                return false;
+            }
+    
+            @Override
+            public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+                if (hasNext()) {
+                    return currentIterator.next();
+                }
+    
+                throw new NoSuchElementException();
+            }
+    
+            @Override
+            public void rewind() throws DbException, TransactionAbortedException {
+                close();
+                open();
+            }
+    
+            @Override
+            public void close() {
+                currentPage = -1;
+                currentIterator = null;
+            }
+        };
     }
 
 }

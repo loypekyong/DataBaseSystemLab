@@ -106,7 +106,7 @@ public class BufferPool {
             if (pool.containsKey(pid)){
                 return pool.get(pid);
             } else {
-                throw new DbException("BufferPool is full");
+                throw new DbException("BufferPool is full already");
             }
         } else {
             throw new DbException("BufferPool is full");
