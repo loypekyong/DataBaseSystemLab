@@ -92,25 +92,24 @@ public class BufferPool {
 
         // Todo: Some lock mechanism should be implemented here???
 
-        if (pool.size() < numPages){
-
-            if (pool.containsKey(pid)){
-                return pool.get(pid);
-            } else {
-                DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-                Page page = file.readPage(pid);
-                pool.put(pid, page);
-                return page;
-            }
-        } else if (pool.size() == numPages){
-            if (pool.containsKey(pid)){
-                return pool.get(pid);
-            } else {
-                throw new DbException("BufferPool is full already");
-            }
-        } else {
-            throw new DbException("BufferPool is full");
+        // If the page is already in the pool, return it
+        if (pool.containsKey(pid)) {
+            return pool.get(pid);
         }
+
+        // If the page is not in the pool, add it to the pool
+        // If there is insufficient space in the buffer pool, a page should be evicted and the new page should be added in its place.
+        if (pool.size() >= numPages) {
+            evictPage();
+        }
+
+        // If the page is not in the pool, add it to the pool
+        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page page = file.readPage(pid);
+        pool.put(pid, page);
+        return page;
+        
+
     }
 
     /**
@@ -243,6 +242,8 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+
+        throw new DbException("BufferPool is full");
     }
 
 }
