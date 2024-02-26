@@ -130,56 +130,58 @@ public class HeapFile implements DbFile {
     }
 
     public DbFileIterator iterator(TransactionId tid) {
-        return new DbFileIterator() {
-            private int currentPage = -1;
-            private Iterator<Tuple> currentIterator = null;
+        // return new DbFileIterator() {
+        //     private int currentPage = -1;
+        //     private Iterator<Tuple> currentIterator = null;
     
-            @Override
-            public void open() throws DbException, TransactionAbortedException {
-                currentPage = 0;
-                currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
-            }
+        //     @Override
+        //     public void open() throws DbException, TransactionAbortedException {
+        //         currentPage = 0;
+        //         currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
+        //     }
     
-            @Override
-            public boolean hasNext() throws DbException, TransactionAbortedException {
-                if (currentIterator == null) {
-                    return false;
-                }
+        //     @Override
+        //     public boolean hasNext() throws DbException, TransactionAbortedException {
+        //         if (currentIterator == null) {
+        //             return false;
+        //         }
     
-                if (currentIterator.hasNext()) {
-                    return true;
-                }
+        //         if (currentIterator.hasNext()) {
+        //             return true;
+        //         }
     
-                if (currentPage < BufferPool.numPages - 1) {
-                    currentPage++;
-                    currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
-                    return hasNext();
-                }
+        //         if (currentPage < BufferPool.numPages - 1) {
+        //             currentPage++;
+        //             currentIterator = ((HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), currentPage), Permissions.READ_ONLY)).iterator();
+        //             return hasNext();
+        //         }
     
-                return false;
-            }
+        //         return false;
+        //     }
     
-            @Override
-            public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
-                if (hasNext()) {
-                    return currentIterator.next();
-                }
+        //     @Override
+        //     public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+        //         if (hasNext()) {
+        //             return currentIterator.next();
+        //         }
     
-                throw new NoSuchElementException();
-            }
+        //         throw new NoSuchElementException();
+        //     }
     
-            @Override
-            public void rewind() throws DbException, TransactionAbortedException {
-                close();
-                open();
-            }
+        //     @Override
+        //     public void rewind() throws DbException, TransactionAbortedException {
+        //         close();
+        //         open();
+        //     }
     
-            @Override
-            public void close() {
-                currentPage = -1;
-                currentIterator = null;
-            }
-        };
+        //     @Override
+        //     public void close() {
+        //         currentPage = -1;
+        //         currentIterator = null;
+        //     }
+        // };
+
+        return new HeapFileIterator(tid, this);
     }
 
 }

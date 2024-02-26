@@ -97,7 +97,7 @@ public class BufferPool {
             return pool.get(pid);
         }
 
-        // If the page is not in the pool, add it to the pool
+        // // If the page is not in the pool, add it to the pool
         // If there is insufficient space in the buffer pool, a page should be evicted and the new page should be added in its place.
         if (pool.size() >= numPages) {
             evictPage();
