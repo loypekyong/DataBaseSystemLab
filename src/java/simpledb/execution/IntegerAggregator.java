@@ -60,30 +60,33 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
         Field groupVal = (gbfield == Aggregator.NO_GROUPING) ? null : tup.getField(gbfield);
-        int aggregateVal = ((IntField) tup.getField(afield)).getValue();
-        groupAggregateValue.putIfAbsent(groupVal, (what == Op.MIN) ? Integer.MAX_VALUE : 0);
-        groupCount.putIfAbsent(groupVal, 0);
-        int currentAggregate = groupAggregateValue.get(groupVal);
-        int currentCount = groupCount.get(groupVal);
+        IntField aggregateValField = (IntField) tup.getField(afield);
+        int aggregateVal = aggregateValField.getValue();
+
+        groupCount.put(groupVal, groupCount.getOrDefault(groupVal, 0) + 1);
 
         switch (what) {
             case COUNT:
-                currentAggregate++;
+                groupAggregateValue.put(groupVal, groupCount.get(groupVal));
                 break;
             case SUM:
-                currentAggregate += aggregateVal;
+            case AVG:
+                int currentSum = groupAggregateValue.getOrDefault(groupVal, 0);
+                groupAggregateValue.put(groupVal, currentSum + aggregateVal);
                 break;
-            case AVG: // keeping the SUM and COUNT, calculate AVG in iterator()
             case MIN:
-                currentAggregate = Math.min(currentAggregate, aggregateVal);
+                int currentMin = groupAggregateValue.getOrDefault(groupVal, Integer.MAX_VALUE);
+                groupAggregateValue.put(groupVal, Math.min(currentMin, aggregateVal));
                 break;
             case MAX:
-                currentAggregate = Math.max(currentAggregate, aggregateVal);
+                int currentMax = groupAggregateValue.getOrDefault(groupVal, Integer.MIN_VALUE);
+                groupAggregateValue.put(groupVal, Math.max(currentMax, aggregateVal));
                 break;
+            default:
+                throw new IllegalArgumentException("Unsupported aggregation");
         }
 
-        groupAggregateValue.put(groupVal, currentAggregate);
-        groupCount.put(groupVal, currentCount + 1);
+
     }
 
     /**
@@ -104,7 +107,7 @@ public class IntegerAggregator implements Aggregator {
         for (Map.Entry<Field, Integer> entry : groupAggregateValue.entrySet()) {
             int value = entry.getValue();
             if (what == Op.AVG) {
-                value /= groupCount.get(entry.getKey());
+                value = value/groupCount.get(entry.getKey());
             }
 
             Tuple tuple = new Tuple(td);
