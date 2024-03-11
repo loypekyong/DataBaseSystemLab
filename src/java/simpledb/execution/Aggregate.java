@@ -43,8 +43,10 @@ public class Aggregate extends Operator {
         this.afield = afield;
         this.gfield = gfield;
         this.aop = aop;
-
-        Type gbfieldtype = gfield == Aggregator.NO_GROUPING ? null : child.getTupleDesc().getFieldType(gfield);
+        Type gbfieldtype = null;
+        if (gfield != Aggregator.NO_GROUPING) {
+            gbfieldtype = child.getTupleDesc().getFieldType(gfield);
+        }
         Type afieldtype = child.getTupleDesc().getFieldType(afield);
 
         if (afieldtype == Type.INT_TYPE) {
@@ -155,7 +157,24 @@ public class Aggregate extends Operator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return aggregateIterator.getTupleDesc();
+        if (aggregateIterator == null) {
+            if (gfield == Aggregator.NO_GROUPING) {
+                Type[] typeAr = new Type[]{Type.INT_TYPE};
+                String[] fieldAr = new String[]{child.getTupleDesc().getFieldName(afield)};
+                return new TupleDesc(typeAr, fieldAr);
+            } else {
+                Type gbfieldtype = child.getTupleDesc().getFieldType(gfield);
+                Type[] typeAr = new Type[]{gbfieldtype, Type.INT_TYPE};
+                String[] fieldAr = new String[]{
+                        child.getTupleDesc().getFieldName(gfield),
+                        child.getTupleDesc().getFieldName(afield)
+                };
+                return new TupleDesc(typeAr, fieldAr);
+            }
+        }
+        else {
+            return aggregateIterator.getTupleDesc();
+        }
     }
 
     public void close() {
