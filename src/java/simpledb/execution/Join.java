@@ -131,7 +131,7 @@ public class Join extends Operator {
             }
             if (child1.hasNext()) {
                 currentTuple1 = child1.next();
-
+                child2.rewind();
             } else {
                 currentTuple1 = null;
             }
