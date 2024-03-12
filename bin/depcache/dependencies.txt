@@ -176,6 +176,7 @@ simpledb.storage.Page
 simpledb.storage.BufferPool
 java.io.ByteArrayInputStream
 java.io.DataOutputStream
+simpledb.transaction.TransactionId
 simpledb.common.Database
 java.lang.Math
 java.lang.Byte

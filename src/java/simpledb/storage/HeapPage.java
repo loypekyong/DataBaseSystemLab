@@ -24,7 +24,8 @@ public class HeapPage implements Page {
     final byte[] header;
     final Tuple[] tuples;
     final int numSlots;
-
+    private boolean isDirty;
+    private TransactionId lastDirtier;
     byte[] oldData;
     private final Byte oldDataLock= (byte) 0;
 
@@ -253,6 +254,14 @@ public class HeapPage implements Page {
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        RecordId tid = t.getRecordId();
+        HeapPageId hpid = (HeapPageId) tid.getPageId();
+        int tupleNum = tid.getTupleNumber();
+        if (!hpid.equals(pid) || !isSlotUsed(tupleNum)) {
+            throw new DbException("this tuple is not on this page, or tuple slot is already empty");
+        }
+        tuples[tupleNum]=null;
+        markSlotUsed(tupleNum, false);
     }
 
     /**
@@ -265,6 +274,17 @@ public class HeapPage implements Page {
     public void insertTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        if (!td.equals(t.getTupleDesc())) throw new DbException("tupleDesc mismatch");
+
+        for(int i=0;i<getNumTuples();i++) {
+            if (!isSlotUsed(i)) {
+                tuples[i] = t;
+                t.setRecordId(new RecordId(pid, i));
+                markSlotUsed(i,true);
+                return;
+            }
+        }
+        throw new DbException("page is full");
     }
 
     /**
@@ -274,6 +294,8 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
 	// not necessary for lab1
+        this.isDirty = dirty;
+        this.lastDirtier = dirty ? tid : null;
     }
 
     /**
@@ -282,7 +304,7 @@ public class HeapPage implements Page {
     public TransactionId isDirty() {
         // some code goes here
 	// Not necessary for lab1
-        return null;      
+        return isDirty ? lastDirtier : null;
     }
 
     /**
@@ -319,6 +341,13 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+        int headerByte = i / 8;
+        int bitOffset = i % 8;
+        if (value) {
+            header[headerByte] |= (1 << bitOffset);
+        } else {
+            header[headerByte] &= ~(1 << bitOffset);
+        }
     }
 
     /**

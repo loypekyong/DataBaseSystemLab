@@ -24,6 +24,7 @@ public class HeapFile implements DbFile {
 
     private File file;
     private TupleDesc td;
+    private int numPage;
 
     /**
      * Constructs a heap file backed by the specified file.
@@ -37,6 +38,7 @@ public class HeapFile implements DbFile {
 
         this.file = f;
         this.td = td;
+        numPage = (int) Math.ceil(file.length() / (double) BufferPool.getPageSize());
 
     }
 
@@ -103,6 +105,7 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
+
     }
 
     /**
@@ -110,23 +113,24 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // some code goes here
-        return (int) Math.ceil(file.length() / BufferPool.getPageSize());
+        return numPage;
     }
 
     // see DbFile.java for javadocs
     public List<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for lab1
+        return null;
+
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for lab1
+       return null;
     }
 
     public DbFileIterator iterator(TransactionId tid) {
