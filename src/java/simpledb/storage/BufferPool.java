@@ -176,6 +176,15 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        HeapFile file = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> Arr = (ArrayList<Page>) file.insertTuple(tid, t);
+        for (Page pg : Arr) {
+            pg.markDirty(true, tid);
+            if (this.pool.size() > this.numPages) {
+                this.evictPage();
+            }
+            this.pool.put(pg.getId(), pg);
+        }
 
 
 
@@ -198,6 +207,19 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        if (t.getRecordId() == null) {
+            System.out.printf("Null: %s%n", t.toString());
+        }
+        int tableId = t.getRecordId().getPageId().getTableId();
+        DbFile file = Database.getCatalog().getDatabaseFile(tableId);
+
+        ArrayList<Page> pages = (ArrayList<Page>) file.deleteTuple(tid, t);
+
+        for (Page p: pages) {
+            p.markDirty(true, tid);
+            // Assign id to the page
+            this.pool.put(p.getId(), p);
+        }
 
 
 
@@ -211,6 +233,9 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
+        for (PageId pid: this.pool.keySet()) {
+            this.flushPage(pid);
+        }
 
 
     }
@@ -226,6 +251,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        this.pool.remove(pid);
     }
 
     /**
@@ -235,7 +261,20 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page page = this.pool.get(pid);
 
+        if (this.pool.containsKey(pid)) {
+            TransactionId dirty = page.isDirty();
+            if (dirty != null) {
+                Database.getLogFile().logWrite(dirty, page.getBeforeImage(), page);
+                Database.getLogFile().force();
+                HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(pid.getTableId());
+                heapFile.writePage(page);
+
+
+                page.markDirty(false, null);
+            }
+        }
 
     }
 
@@ -253,7 +292,18 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-        throw new DbException("BufferPool is full");
+        ArrayList<PageId> arrayList = new ArrayList<>(this.pool.keySet());
+        int randomPage = (int) (Math.random() * this.pool.size());
+
+
+        PageId pid = arrayList.get(randomPage);
+
+        try {
+            this.flushPage(pid);
+        } catch (IOException e) {
+            throw new DbException("Page could not be flushed");
+        }
+        this.pool.remove(pid);
     }
 
 }
