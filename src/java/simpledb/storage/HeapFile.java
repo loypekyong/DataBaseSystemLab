@@ -188,7 +188,7 @@ public class HeapFile implements DbFile {
     }
 
     public DbFileIterator iterator(TransactionId tid) {
-        return new HeapFileIterator(this, tid);
+        return new HeapFileIterator(this.getId(), tid, this.numPages());
     }
 
 }
