@@ -28,7 +28,6 @@ public class HeapPage implements Page {
     private TransactionId dirtyTid;
     byte[] oldData;
     private final Byte oldDataLock= (byte) 0;
-    private long lastAccessTimestamp;
 
     /**
      * Create a HeapPage from a set of bytes of data read from disk.
