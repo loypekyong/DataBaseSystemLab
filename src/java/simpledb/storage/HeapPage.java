@@ -6,6 +6,7 @@ import simpledb.common.Debug;
 import simpledb.common.Catalog;
 import simpledb.transaction.TransactionId;
 
+import java.time.Instant;
 import java.util.*;
 import java.io.*;
 
@@ -27,6 +28,7 @@ public class HeapPage implements Page {
     private TransactionId dirtyTid;
     byte[] oldData;
     private final Byte oldDataLock= (byte) 0;
+    private long lastAccessTimestamp;
 
     /**
      * Create a HeapPage from a set of bytes of data read from disk.
@@ -361,6 +363,7 @@ public class HeapPage implements Page {
             header[headerByte] &= ~(1 << bitOffset);
         }
     }
+
 
     /**
      * @return an iterator over all tuples on this page (calling remove on this iterator throws an UnsupportedOperationException)

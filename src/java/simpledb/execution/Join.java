@@ -78,9 +78,12 @@ public class Join extends Operator {
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        this.child1.open();
+        this.child2.open();
         super.open();
-        child1.open();
-        child2.open();
+        if (!this.checkAndSetNextTuple(child1)) {
+            throw new NoSuchElementException();
+        }
     }
 
     public void close() {
@@ -88,14 +91,12 @@ public class Join extends Operator {
         super.close();
         child1.close();
         child2.close();
-        currentTuple1 = null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         child1.rewind();
         child2.rewind();
-        currentTuple1 = null;
     }
 
     /**
@@ -118,40 +119,44 @@ public class Join extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (currentTuple1 == null && child1.hasNext()) {
-            currentTuple1 = child1.next();
-        }
-
-        while (currentTuple1 != null) {
-            while (child2.hasNext()) {
-                Tuple tuple2 = child2.next();
-                if (p.filter(currentTuple1, tuple2)) {
-                    return mergeTuples(currentTuple1, tuple2);
+        do {
+            Tuple t1 = this.currentTuple1;
+            while (this.child2.hasNext()) {
+                Tuple t2 = this.child2.next();
+                if (this.p.filter(t1, t2)) {
+                    return this.mergeTuples(t1, t2);
                 }
             }
-            if (child1.hasNext()) {
-                currentTuple1 = child1.next();
-                child2.rewind();
-            } else {
-                currentTuple1 = null;
-            }
-        }
+            this.child2.rewind();
+        } while (this.checkAndSetNextTuple(this.child1));
+
         return null;
     }
+
     //helper func created for merging
     private Tuple mergeTuples(Tuple tuple1, Tuple tuple2) {
-        Tuple merged = new Tuple(getTupleDesc());
-        int i = 0;
+        Tuple joinedTuple = new Tuple(this.getTupleDesc());
 
-        for (Iterator<Field> fields = tuple1.fields(); fields.hasNext(); ) {
-            merged.setField(i++, fields.next());
+        for (int i = 0; i < tuple1.getNumFields(); i++) {
+            joinedTuple.setField(i, tuple1.getField(i));
         }
-        for (Iterator<Field> fields = tuple2.fields(); fields.hasNext(); ) {
-            merged.setField(i++, fields.next());
+
+        for (int j = 0; j < tuple2.getNumFields(); j++) {
+            joinedTuple.setField(j + tuple1.getNumFields(), tuple2.getField(j));
         }
-        return merged;
+
+        return joinedTuple;
     }
 
+    private boolean checkAndSetNextTuple(OpIterator child)
+            throws TransactionAbortedException, DbException {
+        if (child.hasNext()) {
+            this.currentTuple1 = child.next();
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     @Override
     public OpIterator[] getChildren() {
@@ -162,10 +167,15 @@ public class Join extends Operator {
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
-        if (children.length >= 2) {
+        if (this.child1 != children[0]) {
             this.child1 = children[0];
+        }
+
+        if (this.child2 != children[1]) {
             this.child2 = children[1];
         }
     }
+
+
 
 }

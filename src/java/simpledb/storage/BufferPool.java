@@ -9,8 +9,7 @@ import simpledb.transaction.TransactionId;
 
 import java.io.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -38,7 +37,7 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     
-    private ConcurrentHashMap<PageId, Page> pool;
+    private LinkedHashMap<PageId, Page> pool; //for LRU
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -48,11 +47,15 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         BufferPool.numPages = numPages;
-        pool = new ConcurrentHashMap<PageId, Page>();
-        
+        this.pool = new LinkedHashMap<PageId, Page>(16, 0.75f, true) { // access order set to true for LRU
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<PageId, Page> eldest) {
+                return size() > numPages; // ensures LRU eviction based on the size constraint
+            }
+        };
+        }
         
 
-    }
     
     public static int getPageSize() {
       return pageSize;
@@ -94,9 +97,12 @@ public class BufferPool {
 
         // Todo: Some lock mechanism should be implemented here???
 
-        // If the page is already in the pool, return it
+        // If the page is already in the pool
         if (pool.containsKey(pid)) {
-            return pool.get(pid);
+            Page page = this.pool.get(pid);
+            this.pool.remove(pid);
+            this.pool.put(pid, page);
+            return page;
         }
 
         // // If the page is not in the pool, add it to the pool
@@ -180,10 +186,11 @@ public class BufferPool {
         ArrayList<Page> Arr = (ArrayList<Page>) file.insertTuple(tid, t);
         for (Page pg : Arr) {
             pg.markDirty(true, tid);
-            if (this.pool.size() > this.numPages) {
+            if (!this.pool.containsKey(pg.getId()) && this.pool.size() >= this.numPages) {
                 this.evictPage();
             }
-            this.pool.put(pg.getId(), pg);
+            this.pool.remove(pg.getId());
+            this.pool.put(pg.getId(), pg); // id assigned
         }
 
 
@@ -217,6 +224,10 @@ public class BufferPool {
 
         for (Page p: pages) {
             p.markDirty(true, tid);
+            if (!this.pool.containsKey(p.getId()) && this.pool.size() >= this.numPages) {
+                this.evictPage();
+            }
+            this.pool.remove(p.getId());
             // Assign id to the page
             this.pool.put(p.getId(), p);
         }
@@ -233,8 +244,11 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-        for (PageId pid: this.pool.keySet()) {
-            this.flushPage(pid);
+        List<PageId> pageIds = new ArrayList<>(this.pool.keySet());
+
+
+        for (PageId pid : pageIds) {
+            flushPage(pid); // flushPage call
         }
 
 
@@ -251,14 +265,14 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
-        this.pool.remove(pid);
+        this.pool.remove(pid); //remove w/o flushing to disk
     }
 
     /**
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException {
+    private synchronized  void flushPage(PageId pid) throws IOException { //write dirty pages to disk
         // some code goes here
         // not necessary for lab1
         Page page = this.pool.get(pid);
@@ -292,14 +306,12 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-        ArrayList<PageId> arrayList = new ArrayList<>(this.pool.keySet());
-        int randomPage = (int) (Math.random() * this.pool.size());
 
 
-        PageId pid = arrayList.get(randomPage);
+        PageId pid = this.pool.keySet().iterator().next();
 
         try {
-            this.flushPage(pid);
+            this.flushPage(pid); //flushPage called
         } catch (IOException e) {
             throw new DbException("Page could not be flushed");
         }

@@ -105,6 +105,10 @@ public class Tuple implements Serializable {
         return items[i];
     }
 
+    public int getNumFields() { //helper
+        return this.items.length;
+    }
+
     /**
      * Returns the contents of this Tuple as a string. Note that to pass the
      * system tests, the format needs to be as follows:

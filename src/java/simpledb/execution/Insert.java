@@ -37,7 +37,7 @@ public class Insert extends Operator {
     private OpIterator child;
     private int tableId;
     private TupleDesc td;
-    private boolean hasBeenCalled;
+    private boolean hasBeenCalled=false;
     public Insert(TransactionId t, OpIterator child, int tableId)
             throws DbException {
         // some code goes here
@@ -45,7 +45,6 @@ public class Insert extends Operator {
         this.child = child;
         this.tableId = tableId;
         this.td = new TupleDesc(new Type[]{Type.INT_TYPE});
-        this.hasBeenCalled = false;
         if (!child.getTupleDesc().equals(Database.getCatalog().getTupleDesc(this.tableId))) {
             throw new DbException("Child tuple descriptor does not match table into which we are to insert!");
         }
@@ -53,25 +52,27 @@ public class Insert extends Operator {
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return td;
+        return this.td;
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
         super.open();
-        child.open();
+        this.child.open();
+        this.hasBeenCalled = false;
     }
 
     public void close() {
         // some code goes here
         super.close();
-        child.close();
+        this.child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        child.rewind();
-        hasBeenCalled = false;
+        this.child.rewind();
+        this.close();
+        this.open();
     }
 
     /**
@@ -89,23 +90,25 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (hasBeenCalled) {
+        if (this.hasBeenCalled) {
             return null;
         }
         int count = 0;
+        this.hasBeenCalled = true;
         BufferPool bufferPool = Database.getBufferPool();
-        while (child.hasNext()) {
+        while (this.child.hasNext()) {
             Tuple tuple = child.next();
+            count++;
             try {
-                bufferPool.insertTuple(t, tableId, tuple);
+                bufferPool.insertTuple(this.t, this.tableId, tuple);
             } catch (IOException e) {
                 throw new DbException("Insertion failed");
             }
-            count++;
+
         }
         Tuple resultTuple = new Tuple(getTupleDesc());
         resultTuple.setField(0, new IntField(count));
-        hasBeenCalled = true;
+
         return resultTuple;
     }
 
@@ -118,8 +121,7 @@ public class Insert extends Operator {
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
-        if (children.length > 0) {
             this.child = children[0];
         }
-    }
+
 }
