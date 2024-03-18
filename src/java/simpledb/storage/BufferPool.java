@@ -136,7 +136,7 @@ public class BufferPool {
 
             return page;
     }
-
+    
 
     /**
      * Releases the lock on a page.
@@ -324,27 +324,21 @@ public class BufferPool {
      * Discards a page from the buffer pool.s
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized void evictPage() throws DbException {
-        Iterator<PageId> pageIdIterator = this.pool.keySet().iterator();
-
-        while (pageIdIterator.hasNext()) {
-            PageId pid = pageIdIterator.next();
-            Page page = this.pool.get(pid);
-
-            // If the page is not dirty, flush it and remove it from the pool
-            if (page.isDirty() == null) {
-                try {
-                    this.flushPage(pid);
-                    pageIdIterator.remove();
-                    return;
-                } catch (IOException e) {
-                    throw new DbException("Page could not be flushed");
-                }
-            }
+    private synchronized  void evictPage() throws DbException {
+        // some code goes here
+        // not necessary for lab1
+    
+    
+        PageId pid = this.pool.keySet().iterator().next();
+    
+        try {
+            // skip page if it is dirty
+    
+            this.flushPage(pid); //flushPage called
+        } catch (IOException e) {
+            throw new DbException("Page could not be flushed");
         }
-
-        // If all pages are dirty, throw a DbException
-        throw new DbException("All pages in the buffer pool are dirty.");
+        this.pool.remove(pid);
     }
 
 }
