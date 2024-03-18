@@ -4,6 +4,7 @@ import simpledb.common.Database;
 import simpledb.common.Permissions;
 import simpledb.common.DbException;
 import simpledb.common.DeadlockException;
+// import simpledb.transaction.LockManager;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
@@ -11,6 +12,11 @@ import java.io.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+//import reentrantreadwritelock
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -30,6 +36,10 @@ public class BufferPool {
     private static int pageSize = DEFAULT_PAGE_SIZE;
 
     public static int numPages;
+
+    //concurrenthashmap for locks
+    private final ConcurrentHashMap<PageId, ReentrantReadWriteLock> locks = new ConcurrentHashMap<>();
+
     
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
@@ -47,6 +57,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         BufferPool.numPages = numPages;
+        // this.lockManager = new LockManager();
         this.pool = new LinkedHashMap<PageId, Page>(16, 0.75f, true) { // access order set to true for LRU
             @Override
             protected boolean removeEldestEntry(Map.Entry<PageId, Page> eldest) {
@@ -94,9 +105,17 @@ public class BufferPool {
         /**
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
+        
+        // check lock type
+        if (perm == Permissions.READ_ONLY) {
+            locks.putIfAbsent(pid, new ReentrantReadWriteLock());
+            locks.get(pid).readLock().lock();
+        } else if (perm == Permissions.READ_WRITE) {
+            locks.putIfAbsent(pid, new ReentrantReadWriteLock());
+            locks.get(pid).writeLock().lock();
+        }
 
-        // Todo: Some lock mechanism should be implemented here???
-
+        try {
         // If the page is already in the pool
         if (pool.containsKey(pid)) {
             Page page = this.pool.get(pid);
@@ -105,7 +124,7 @@ public class BufferPool {
             return page;
         }
 
-        // // If the page is not in the pool, add it to the pool
+        // If the page is not in the pool, add it to the pool
         // If there is insufficient space in the buffer pool, a page should be evicted and the new page should be added in its place.
         if (pool.size() >= numPages) {
             evictPage();
@@ -115,7 +134,16 @@ public class BufferPool {
         DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
         Page page = file.readPage(pid);
         pool.put(pid, page);
+
         return page;
+    }
+    finally {
+        if (perm == Permissions.READ_ONLY) {
+            locks.get(pid).readLock().unlock();
+        } else if (perm == Permissions.READ_WRITE) {
+            locks.get(pid).writeLock().unlock();
+        }
+    }
         
 
     }
@@ -132,6 +160,14 @@ public class BufferPool {
     public  void unsafeReleasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+
+        ReentrantReadWriteLock lock = locks.get(pid);
+        if (lock.isWriteLockedByCurrentThread()) {
+            lock.writeLock().unlock();
+        } else if (lock.getReadHoldCount() > 0) {
+            lock.readLock().unlock();
+        }
+
     }
 
     /**
@@ -148,7 +184,12 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-        return false;
+        ReentrantReadWriteLock lock = locks.get(p);
+        if (lock == null) {
+            return false;
+        }
+        return lock.getReadHoldCount() > 0 || lock.isWriteLockedByCurrentThread();
+
     }
 
     /**
@@ -192,8 +233,6 @@ public class BufferPool {
             this.pool.remove(pg.getId());
             this.pool.put(pg.getId(), pg); // id assigned
         }
-
-
 
     }
 
