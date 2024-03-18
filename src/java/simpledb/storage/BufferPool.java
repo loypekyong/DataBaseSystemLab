@@ -4,6 +4,7 @@ import simpledb.common.Database;
 import simpledb.common.Permissions;
 import simpledb.common.DbException;
 import simpledb.common.DeadlockException;
+import simpledb.transaction.LockManager;
 // import simpledb.transaction.LockManager;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
@@ -37,8 +38,7 @@ public class BufferPool {
 
     public static int numPages;
 
-    //concurrenthashmap for locks
-    private final ConcurrentHashMap<PageId, ReentrantReadWriteLock> locks = new ConcurrentHashMap<>();
+    private final LockManager lockManager = new LockManager();
 
     
     /** Default number of pages passed to the constructor. This is used by
@@ -105,48 +105,38 @@ public class BufferPool {
         /**
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
-        
-        // check lock type
-        if (perm == Permissions.READ_ONLY) {
-            locks.putIfAbsent(pid, new ReentrantReadWriteLock());
-            locks.get(pid).readLock().lock();
-        } else if (perm == Permissions.READ_WRITE) {
-            locks.putIfAbsent(pid, new ReentrantReadWriteLock());
-            locks.get(pid).writeLock().lock();
+
+
+         if (perm == Permissions.READ_WRITE) {
+            this.lockManager.acquireWriteLock(tid, pid);
+        } else if (perm == Permissions.READ_ONLY) {
+            this.lockManager.acquireReadLock(tid, pid);
+        } else {
+            throw new DbException("Invalid permission requested.");
         }
 
-        try {
-        // If the page is already in the pool
-        if (pool.containsKey(pid)) {
-            Page page = this.pool.get(pid);
-            this.pool.remove(pid);
-            this.pool.put(pid, page);
+            // If the page is already in the pool
+            if (pool.containsKey(pid)) {
+                Page page = this.pool.get(pid);
+                this.pool.remove(pid);
+                this.pool.put(pid, page);
+                return page;
+            }
+
+            // If the page is not in the pool, add it to the pool
+            // If there is insufficient space in the buffer pool, a page should be evicted and the new page should be added in its place.
+            if (pool.size() >= numPages) {
+                evictPage();
+            }
+
+            // If the page is not in the pool, add it to the pool
+            DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = file.readPage(pid);
+            pool.put(pid, page);
+
             return page;
-        }
-
-        // If the page is not in the pool, add it to the pool
-        // If there is insufficient space in the buffer pool, a page should be evicted and the new page should be added in its place.
-        if (pool.size() >= numPages) {
-            evictPage();
-        }
-
-        // If the page is not in the pool, add it to the pool
-        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-        Page page = file.readPage(pid);
-        pool.put(pid, page);
-
-        return page;
     }
-    finally {
-        if (perm == Permissions.READ_ONLY) {
-            locks.get(pid).readLock().unlock();
-        } else if (perm == Permissions.READ_WRITE) {
-            locks.get(pid).writeLock().unlock();
-        }
-    }
-        
 
-    }
 
     /**
      * Releases the lock on a page.
@@ -161,13 +151,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1|lab2
 
-        ReentrantReadWriteLock lock = locks.get(pid);
-        if (lock.isWriteLockedByCurrentThread()) {
-            lock.writeLock().unlock();
-        } else if (lock.getReadHoldCount() > 0) {
-            lock.readLock().unlock();
-        }
-
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -178,17 +162,14 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) {
         // some code goes here
         // not necessary for lab1|lab2
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-        ReentrantReadWriteLock lock = locks.get(p);
-        if (lock == null) {
-            return false;
-        }
-        return lock.getReadHoldCount() > 0 || lock.isWriteLockedByCurrentThread();
+        return lockManager.holdsLock(tid, p);
 
     }
 
@@ -202,6 +183,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid, boolean commit) {
         // some code goes here
         // not necessary for lab1|lab2
+
     }
 
     /**
@@ -342,19 +324,27 @@ public class BufferPool {
      * Discards a page from the buffer pool.s
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
+    private synchronized void evictPage() throws DbException {
+        Iterator<PageId> pageIdIterator = this.pool.keySet().iterator();
 
+        while (pageIdIterator.hasNext()) {
+            PageId pid = pageIdIterator.next();
+            Page page = this.pool.get(pid);
 
-        PageId pid = this.pool.keySet().iterator().next();
-
-        try {
-            this.flushPage(pid); //flushPage called
-        } catch (IOException e) {
-            throw new DbException("Page could not be flushed");
+            // If the page is not dirty, flush it and remove it from the pool
+            if (page.isDirty() == null) {
+                try {
+                    this.flushPage(pid);
+                    pageIdIterator.remove();
+                    return;
+                } catch (IOException e) {
+                    throw new DbException("Page could not be flushed");
+                }
+            }
         }
-        this.pool.remove(pid);
+
+        // If all pages are dirty, throw a DbException
+        throw new DbException("All pages in the buffer pool are dirty.");
     }
 
 }
