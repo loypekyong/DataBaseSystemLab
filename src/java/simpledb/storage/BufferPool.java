@@ -106,14 +106,10 @@ public class BufferPool {
          * The BufferPool should store up to `numPages` pages. For this lab, if more than `numPages` requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.
          */
 
-
-         if (perm == Permissions.READ_WRITE) {
-            this.lockManager.acquireWriteLock(tid, pid);
-        } else if (perm == Permissions.READ_ONLY) {
-            this.lockManager.acquireReadLock(tid, pid);
-        } else {
-            throw new DbException("Invalid permission requested.");
-        }
+         boolean readWritePermissions = perm != null && perm == Permissions.READ_WRITE;
+         while(!lockManager.pageLock(tid, pid, readWritePermissions))
+             continue;
+        
 
             // If the page is already in the pool
             if (pool.containsKey(pid)) {
@@ -151,7 +147,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1|lab2
 
-        lockManager.releaseLock(tid, pid);
+        lockManager.pageUnlock(tid, pid);
     }
 
     /**
