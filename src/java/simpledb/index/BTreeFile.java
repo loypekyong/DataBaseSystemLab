@@ -197,7 +197,6 @@ public class BTreeFile implements DbFile {
             throws DbException, TransactionAbortedException {
 
         // Fetch the page with READ_ONLY permission initially
-        Page page = getPage(tid, dirtypages, pid, perm);
 
         if (pid.pgcateg() == BTreePageId.LEAF) {
             // If the page is a leaf page, fetch it again with the requested permissions
@@ -290,29 +289,7 @@ public class BTreeFile implements DbFile {
 		// which a
 		// tuple with the given key field should be inserted.
 		// Create a new leaf page
-		BTreeLeafPage newLeafPage = (BTreeLeafPage) getEmptyPage(tid, dirtypages, BTreePageId.LEAF);
-
-		// Move half of the tuples to the new page
-		Iterator<Tuple> iterator = page.reverseIterator();
-		for (int i = 0; i < page.getNumTuples() / 2; i++) {
-			Tuple tuple = iterator.next();
-			page.deleteTuple(tuple);
-			newLeafPage.insertTuple(tuple);
-		}
-
-		Field middleKey = newLeafPage.iterator().next().getField(keyField);
-		// Update the sibling pointers
-		newLeafPage.setRightSiblingId(page.getRightSiblingId());
-		// Insert a new entry in the parent page
-		BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleKey);
-		BTreeEntry entry = new BTreeEntry(newLeafPage.iterator().next().getField(0), page.getId(), newLeafPage.getId());
-		parent.insertEntry(entry);
-
-		// Update the parent pointers
-		updateParentPointers(tid, dirtypages, parent);
-
-		// Return the appropriate page
-		return middleKey.compare(Op.LESS_THAN_OR_EQ, field) ? page : newLeafPage;
+		return null;
 
 	}
 
@@ -362,32 +339,7 @@ public class BTreeFile implements DbFile {
 		// field
 		// should be inserted.
 		// Create a new internal page
-		BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(tid, dirtypages, BTreePageId.INTERNAL);
-
-		// Move half of the entries to the new page
-		Iterator<BTreeEntry> iterator = page.reverseIterator();
-		for (int i = 0; i < page.getNumEntries() / 2; i++) {
-			BTreeEntry entry = iterator.next();
-			page.deleteKeyAndRightChild(entry);
-			newInternalPage.insertEntry(entry);
-		}
-	
-		// Push up the middle key
-		BTreeEntry middleEntry = iterator.next();
-		page.deleteKeyAndRightChild(middleEntry);
-		middleEntry.setLeftChild(page.getId());
-		middleEntry.setRightChild(newInternalPage.getId());
-		Field middleKey = middleEntry.getKey();
-	
-		// Insert the middle entry in the parent page
-		BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleKey);
-		parent.insertEntry(middleEntry);
-	
-		// Update the parent pointers
-		updateParentPointers(tid, dirtypages, parent);
-	
-		// Return the appropriate page
-		return middleKey.compare(Op.LESS_THAN_OR_EQ, field) ? page : newInternalPage;
+		return null;
 	}
 
 	/**
