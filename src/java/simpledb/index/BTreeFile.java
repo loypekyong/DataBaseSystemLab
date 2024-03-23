@@ -196,8 +196,6 @@ public class BTreeFile implements DbFile {
             Field f)
             throws DbException, TransactionAbortedException {
 
-        // Fetch the page with READ_ONLY permission initially
-
         if (pid.pgcateg() == BTreePageId.LEAF) {
             // If the page is a leaf page, fetch it again with the requested permissions
             return (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
