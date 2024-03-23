@@ -2400,12 +2400,14 @@ simpledb.storage.Page
 java.util.ArrayList
 java.io.BufferedOutputStream
 simpledb.storage.BufferPool
+simpledb.execution.Predicate
 simpledb.index.BTreeHeaderPage
 simpledb.storage.DbFile
 simpledb.transaction.TransactionId
 java.util.Map
 simpledb.common.Database
 simpledb.common.Permissions
+simpledb.execution.Predicate$Op
 simpledb.index.BTreeFileIterator
 simpledb.storage.PageId
 java.lang.invoke.MethodHandles$Lookup
@@ -2420,6 +2422,7 @@ java.io.IOException
 java.io.FileInputStream
 java.lang.RuntimeException
 java.lang.IllegalArgumentException
+simpledb.storage.Field
 java.io.File
 simpledb.index.BTreeFile
 simpledb.index.BTreeInternalPage
