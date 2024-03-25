@@ -196,35 +196,31 @@ public class BTreeFile implements DbFile {
             Field f)
             throws DbException, TransactionAbortedException {
 
-        if (pid.pgcateg() == BTreePageId.LEAF) {
-            // If the page is a leaf page, fetch it again with the requested permissions
-            return (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
-        } else {
-            // If the page is an internal page, find the appropriate child page
-            BTreeInternalPage internalPage = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
-            Iterator<BTreeEntry> iterator = internalPage.iterator();
-
-			if (!iterator.hasNext()|| iterator == null) {
-				throw new DbException("No entries in internal page");
-			}
-			if (f == null) {
-				return findLeafPage(tid, dirtypages, iterator.next().getLeftChild(), perm, f);
-			}
-
-            BTreeEntry entry = null;
-            while (iterator.hasNext()) {
-                entry = iterator.next();
-
-                // If the field is null or less than the entry key, recurse on the left child
-                // page
-                if (f == null || f.compare(Op.LESS_THAN_OR_EQ, entry.getKey())) {
-                    return findLeafPage(tid, dirtypages, entry.getLeftChild(), perm, f);
-                }
-            }
-
-            // If the field is greater than all entry keys, recurse on the right child page
-            return findLeafPage(tid, dirtypages, entry.getRightChild(), perm, f);
-        }
+		switch (pid.pgcateg()) {
+			case BTreePageId.LEAF:
+				return (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
+			case BTreePageId.INTERNAL:
+				BTreeInternalPage page = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+				Iterator<BTreeEntry> iter = page.iterator();
+				if (iter == null || !iter.hasNext()) {
+					throw new DbException("No more entries.");
+				}
+				if (f == null) {
+					return findLeafPage(tid, dirtypages, iter.next().getLeftChild(), perm, f);
+				}
+				BTreeEntry entry = null;
+				while (iter.hasNext()) {
+					entry = iter.next();
+					if (entry.getKey().compare(Op.GREATER_THAN_OR_EQ, f)) {
+						return findLeafPage(tid, dirtypages, entry.getLeftChild(), perm, f);
+					}
+				}
+				return findLeafPage(tid, dirtypages, entry.getRightChild(), perm, f);
+			case BTreePageId.HEADER:
+			case BTreePageId.ROOT_PTR:
+			default:
+				throw new DbException("Unsupported, invalid page type.");
+		}
     }
 
 	/**
@@ -736,35 +732,25 @@ public class BTreeFile implements DbFile {
 		// that the tuples are evenly distributed. Be sure to update
 		// the corresponding parent entry.
 
-		int numTuplesToMove = (sibling.getNumTuples() - page.getNumTuples()) / 2;
 
-        // Create an iterator for the sibling page
-        Iterator<Tuple> iterator;
-        if (isRightSibling) {
-            iterator = sibling.iterator();
-        } else {
-            iterator = sibling.reverseIterator();
-        }
+		Iterator<Tuple> moveTuple = isRightSibling ? sibling.iterator() : sibling.reverseIterator();
+		if (moveTuple==null || !moveTuple.hasNext()) {
+			throw new DbException("Sibling has no tuples.");
+		}
 
-        // Move tuples from the sibling to the page
-        while (numTuplesToMove > 0 && iterator.hasNext()) {
-            Tuple tuple = iterator.next();
-            sibling.deleteTuple(tuple);
-            page.insertTuple(tuple);
-            numTuplesToMove--;
-        }
-
-        // Find the middle key
-        Field middleKey;
-        if (isRightSibling) {
-            middleKey = sibling.iterator().next().getField(0);
-        } else {
-            middleKey = page.reverseIterator().next().getField(0);
-        }
-
-        // Update the parent entry
-        entry.setKey(middleKey);
-        parent.updateEntry(entry);
+		int numSteal = (sibling.getNumTuples() - page.getNumTuples()) / 2;
+		Tuple t = null;
+		for (int i=0; i < numSteal; ++i) {
+			if (!moveTuple.hasNext()) {
+				throw new DbException("Sibling has no tuples.");
+			}
+			t = moveTuple.next();
+			sibling.deleteTuple(t);
+			page.insertTuple(t);
+		}
+		assert t != null;
+		entry.setKey(t.getField(keyField));
+		parent.updateEntry(entry);
 	}
 
 	/**
