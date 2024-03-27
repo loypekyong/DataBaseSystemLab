@@ -100,7 +100,8 @@ public class LockingTest extends TestUtil.CreateHeapFile {
     assertEquals(expected, t.acquired());
 
     // TODO(ghuo): yes, stop() is evil, but this is unit test cleanup
-    t.stop();
+    // t.stop(); // deprecated in java 20 
+    t.interrupt();
   }
 
   /**
@@ -201,4 +202,3 @@ public class LockingTest extends TestUtil.CreateHeapFile {
   }
 
 }
-
